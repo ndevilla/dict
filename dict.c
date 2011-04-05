@@ -348,7 +348,7 @@ void dict_dump(dict * d, FILE * out)
         rank = dict_enumerate(d, rank, &key, &val);
         if (rank<0)
             break ;
-        fprintf(out, "%12s: %s\n", key, val ? val : "UNDEF");
+        fprintf(out, "%20s: %s\n", key, val ? val : "UNDEF");
     }
     return ;
 }
