@@ -36,6 +36,14 @@
  */
 #define DEBUG           0
 
+/*
+ * Specify which hash function to use
+ * MurmurHash is fast but may not work on all architectures
+ * Dobbs is a tad bit slower but not by much and works everywhere
+ */
+#define dict_hash   dict_hash_murmur
+/* #define dict_hash   dict_hash_dobbs */
+
 /* Forward definitions */
 static int dict_resize(dict * d);
 
@@ -58,7 +66,7 @@ static char * xstrdup(char * s)
   This hash function has been taken from an Article in Dr Dobbs Journal.
   There are probably better ones out there but this one does the job.
  */
-static unsigned dict_hash(char * key)
+static unsigned dict_hash_dobbs(char * key)
 {
     int         len ;
     unsigned    hash ;
@@ -74,6 +82,48 @@ static unsigned dict_hash(char * key)
     hash ^= (hash >>11);
     hash += (hash <<15);
     return hash ;
+}
+
+
+/* Murmurhash */
+static unsigned dict_hash_murmur(char * key)
+{
+    int         len ;
+    unsigned    h, k, seed ;
+    unsigned    m = 0x5bd1e995 ;
+    int         r = 24 ;
+    unsigned char * data ;
+
+    seed = 0x0badcafe ;
+    len  = (int)strlen(key);
+
+    h = seed ^ len ;
+    data = (unsigned char *)key ;
+    while(len >= 4) {
+        k = *(unsigned int *)data;
+
+        k *= m;
+        k ^= k >> r;
+        k *= m;
+
+        h *= m;
+        h ^= k;
+
+        data += 4;
+        len -= 4;
+    }
+    switch(len) {
+        case 3: h ^= data[2] << 16;
+        case 2: h ^= data[1] << 8;
+        case 1: h ^= data[0];
+                h *= m;
+    };
+
+    h ^= h >> 13;
+    h *= m;
+    h ^= h >> 15;
+
+    return h;
 }
 
 /** Lookup an element in a dict
